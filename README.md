@@ -91,7 +91,6 @@ And if you use vim:
 ```vim
 :!panopy fancypdf %
 ```
-```
 
 ### Panopy Keywords
 
