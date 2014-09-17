@@ -11,16 +11,29 @@ all_templates = dict()
 # keywords
 DEFAULT_TEMPLATE = '__default__'
 KW_INHERIT = '__inherits__'
+KW_IN = '__in__'
+KW_POST = '__post__'
+KW_PRE = '__pre__'
+
+def filename_replace(text):
+    global basename
+    return re.sub(r'(^|[^\\])%', basename, text)
+    #return re.sub(r'%', basename, text)
 
 def process_arg(key, value):
-    global basename
+    #global basename
 
-    if key == 'o' or key == 'output':
-        value = re.sub(r'%', basename, value)
+    # swap % for the global filename
+    #if value is not None:
+        #print(value)
+        #value = filename_replace(value)
+    #if key == 'o' or key == 'output':
+        #value = re.sub(r'%', basename, value)
+        #value = filename_replace(value)
     if value is None:
         return ['-{longkey}{key}'.format(longkey='-' if len(key) > 1 else '', key=key)]
     elif isinstance(value, basestring):
-        value = os.path.expanduser(value)
+        value = os.path.expanduser(filename_replace(value))
         if len(key) > 1:
             return ['--{key}={value}'.format(key=key, value='"' + value + '"' if ' ' in value else value)]
         else:
@@ -73,47 +86,86 @@ def main():
     else:
         sys.exit('No template named')
 
-    #print(args)
-
+    # pull out base file name from first (non-template) argument
+    # TODO: this is a hackish format...
+    # TODO: let alone the total inability to deal with multiple input files
     (basefolder, basefile) = os.path.split(args[0])
     basefolder = '.' if basefolder == '' else basefolder
     basename = os.path.splitext(basefile)[0]
-    #print(basename)
 
-    # load templates
+    # load all templates, and merge together
     with open(os.path.expanduser(os.path.join(DEFAULT_PATH))) as fin:
         templates = yaml.load_all(fin)
-        templates = [x for x in templates if x is not None]
+        all_templates = dict()
+        for x in templates:
+            if x is not None:
+                all_templates.update(x)
+        #templates = [x for x in templates if x is not None]
 
     # merge the templates together
-    all_templates = dict()
-    for template in templates:
-        all_templates.update(template)
+    #all_templates = dict()
+    #for template in templates:
+        #all_templates.update(template)
 
+    ## build up current template
     # start with default template
     template = update_template(dict(), DEFAULT_TEMPLATE)
-    #template = all_templates[DEFAULT_TEMPLATE] if '__default__' in all_templates else dict()
 
-    # get template
+    # get named template
     template = update_template(template, template_name, [DEFAULT_TEMPLATE])
-    #if template_name not in all_templates:
-        #sys.exit('Template ' + template_name + ' not found in configuration')
-    #else:
-        ## load inherits settings
-        #pretemp = all_templates[template_name]
-        #if KW_INHERIT in pretemp:
-            #if pretemp[KW_INHERIT] not in 
-        #template = all_templates[template_name]
-
     if debug:
-        print(template)
+        print("TEMPLATE\n%s" % template)
 
+    # extract preprocessing commands
+    if KW_PRE in template:
+        preprocess = template[KW_PRE]
+        del template[KW_PRE]
+        preprocess = [[os.path.expanduser(filename_replace(item)) for item in x.split()] for x in preprocess]
+    else:
+        preprocess = None
+
+    # extract postprocessing commands
+    if KW_POST in template:
+        postprocess = template[KW_POST]
+        del template[KW_POST]
+        postprocess = [[os.path.expanduser(filename_replace(item)) for item in x.split()] for x in postprocess]
+    else:
+        postprocess = None
+
+    if debug and postprocess:
+        print("POSTPROCESSING COMMANDS:\n%s" % postprocess)
+    if debug and preprocess:
+        print("PREPROCESSING COMMANDS:\n%s" % preprocess)
+
+    # get input files
+    if KW_IN not in template:
+        infiles = [basefile]
+    else:
+        infiles = template[KW_IN]
+        del template[KW_IN]
+        if isinstance(infiles, basestring):
+            infiles = [infiles]
+        infiles = [os.path.expanduser(filename_replace(item)) for item in infiles]
+
+
+    # build pandoc arguments list
     pandoc_args = [arg for (k,v) in template.iteritems() for arg in process_arg(k,v)]
 
     if debug:
-        print(pandoc_args)
+        print("PANDOC ARGS:\n%s" % pandoc_args)
 
-    call(['pandoc'] + pandoc_args + [basefile] + args[1:], cwd=basefolder)
+    # call preprocessing commands
+    if preprocess:
+        for pp_command in preprocess:
+            call(pp_command)
+
+    # call the bugger
+    call(['pandoc'] + pandoc_args + infiles + args[1:], cwd=basefolder)
+
+    # call postprocessing commands
+    if postprocess:
+        for pp_command in postprocess:
+            call(pp_command)
     
 if __name__ == '__main__':
     main()
