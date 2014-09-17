@@ -132,10 +132,10 @@ def main():
     else:
         postprocess = None
 
-    if debug and postprocess:
-        print("POSTPROCESSING COMMANDS:\n%s" % postprocess)
     if debug and preprocess:
         print("PREPROCESSING COMMANDS:\n%s" % preprocess)
+    if debug and postprocess:
+        print("POSTPROCESSING COMMANDS:\n%s" % postprocess)
 
     # get input files
     if KW_IN not in template:
