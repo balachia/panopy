@@ -14,6 +14,7 @@ KW_INHERIT = '__inherits__'
 KW_IN = '__in__'
 KW_POST = '__post__'
 KW_PRE = '__pre__'
+KW_CLEAR = '__clear__'
 
 def filename_replace(text):
     global basename
@@ -115,6 +116,14 @@ def main():
     template = update_template(template, template_name, [DEFAULT_TEMPLATE])
     if debug:
         print("TEMPLATE\n%s" % template)
+
+    # clear any unwanted settings
+    if KW_CLEAR in template:
+        clears = template[KW_CLEAR]
+        del template[KW_CLEAR]
+        for clear in clears:
+            if clear in template:
+                del template[clear]
 
     # extract preprocessing commands
     if KW_PRE in template:
