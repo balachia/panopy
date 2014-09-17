@@ -80,7 +80,20 @@ preprocess the input file with
 [gpp](http://files.nothingisreal.com/software/gpp/gpp.html) and changes the
 input file to pass to pandoc.
 
-### Panopy YAML Keywords
+Now just find your input file in the terminal and type:
+
+```sh
+panopy fancypdf input.md
+```
+
+And if you use vim:
+
+```vim
+:!panopy fancypdf %
+```
+```
+
+### Panopy Keywords
 
 Special templates:
 
