@@ -175,7 +175,7 @@ def main():
     # call preprocessing commands
     if preprocess:
         for pp_command in preprocess:
-            call(pp_command, shell=True)
+            call(pp_command, shell=False)
 
     # call the bugger
     # TODO: this is an awful hack for stdin/stdout piping
@@ -187,7 +187,7 @@ def main():
     # call postprocessing commands
     if postprocess:
         for pp_command in postprocess:
-            call(pp_command, shell=True)
+            call(pp_command, shell=False)
     
 if __name__ == '__main__':
     main()
