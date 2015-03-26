@@ -1,3 +1,4 @@
+from __future__ import print_function
 import yaml
 import os.path
 import sys
@@ -80,6 +81,9 @@ def main():
     # panopy settings
     debug = '---debug' in panopy_args
 
+    if debug:
+        print(args, file=sys.stderr)
+
     # check if we have a template name in here, else quit
     if len(args) > 1:
         template_name = args[1]
@@ -90,9 +94,14 @@ def main():
     # pull out base file name from first (non-template) argument
     # TODO: this is a hackish format...
     # TODO: let alone the total inability to deal with multiple input files
-    (basefolder, basefile) = os.path.split(args[0])
-    basefolder = '.' if basefolder == '' else basefolder
-    basename = os.path.splitext(basefile)[0]
+    if len(args) > 0:
+        (basefolder, basefile) = os.path.split(args[0])
+        basefolder = '.' if basefolder == '' else basefolder
+        basename = os.path.splitext(basefile)[0]
+    else:
+        basefolder = '.'
+        basefile = None
+        basename = ''
 
     # load all templates, and merge together
     with open(os.path.expanduser(os.path.join(DEFAULT_PATH))) as fin:
@@ -166,15 +175,19 @@ def main():
     # call preprocessing commands
     if preprocess:
         for pp_command in preprocess:
-            call(pp_command)
+            call(pp_command, shell=True)
 
     # call the bugger
-    call(['pandoc'] + pandoc_args + infiles + args[1:], cwd=basefolder)
+    # TODO: this is an awful hack for stdin/stdout piping
+    if basefile is not None:
+        call(['pandoc'] + pandoc_args + infiles + args[1:], cwd=basefolder)
+    else:
+        call(['pandoc'] + pandoc_args, cwd=basefolder)
 
     # call postprocessing commands
     if postprocess:
         for pp_command in postprocess:
-            call(pp_command)
+            call(pp_command, shell=True)
     
 if __name__ == '__main__':
     main()
