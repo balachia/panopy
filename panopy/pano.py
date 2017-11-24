@@ -37,9 +37,9 @@ def process_arg(key, value):
     elif isinstance(value, basestring):
         value = os.path.expanduser(filename_replace(value))
         if len(key) > 1:
-            return ['--{key}={value}'.format(key=key, value='"' + value + '"' if ' ' in value else value)]
+            return ['--{key}={value}'.format(key=key, value=value)]
         else:
-            return ['-{key}'.format(key=key), '{value}'.format(value='"' + value + '"' if ' ' in value else value)]
+            return ['-{key}'.format(key=key), '{value}'.format(value=value)]
     else: # it's a list?
         return [item for subval in value for item in process_arg(key, subval)]
 
