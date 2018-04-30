@@ -17,6 +17,12 @@ KW_POST = '__post__'
 KW_PRE = '__pre__'
 KW_CLEAR = '__clear__'
 
+# python2 compatibility
+try:
+    str
+except NameError:
+    str=basestring
+
 def filename_replace(text):
     global basename
     return re.sub(r'(^|[^\\])%', basename, text)
@@ -34,7 +40,7 @@ def process_arg(key, value):
         #value = filename_replace(value)
     if value is None:
         return ['-{longkey}{key}'.format(longkey='-' if len(key) > 1 else '', key=key)]
-    elif isinstance(value, basestring):
+    elif isinstance(value, str):
         value = os.path.expanduser(filename_replace(value))
         if len(key) > 1:
             return ['--{key}={value}'.format(key=key, value=value)]
@@ -161,13 +167,14 @@ def main():
     else:
         infiles = template[KW_IN]
         del template[KW_IN]
-        if isinstance(infiles, basestring):
+        if isinstance(infiles, str):
             infiles = [infiles]
         infiles = [os.path.expanduser(filename_replace(item)) for item in infiles]
 
 
     # build pandoc arguments list
-    pandoc_args = [arg for (k,v) in template.iteritems() for arg in process_arg(k,v)]
+    # pandoc_args = [arg for (k,v) in template.iteritems() for arg in process_arg(k,v)]
+    pandoc_args = [arg for (k,v) in template.items() for arg in process_arg(k,v)]
 
     if debug:
         print("PANDOC ARGS:\n%s" % pandoc_args)
